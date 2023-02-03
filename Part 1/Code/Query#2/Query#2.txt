@@ -1,0 +1,130 @@
+
+------------------------------------------------------------
+-----------------------Query #2-----------------------------
+------------------------------------------------------------
+
+------------------------------------------------------------
+## Step 1
+## Keep Cities that have at lest 10 customers in order to depict those 10 in the final table
+create table efood2023-375916.main_assessment.COUNT_OF_Users_Per_City_With_At_least_10_USERS
+as
+SELECT 
+
+      city,
+      count(distinct(user_id)) as Count_of_Users
+
+FROM 
+      efood2023-375916.main_assessment.orders
+
+WHERE cuisine = 'Breakfast'
+
+group by city
+
+having count(distinct(user_id)) >= 10
+------------------------------------------------------------
+## Step 2
+## Total order per city for Breakfast cuisine
+create table efood2023-375916.main_assessment.Total_Orders_Per_City
+as
+select 
+
+      a.city,
+      count(order_id) as Count_of_Total_Orders 
+
+from 
+      efood2023-375916.main_assessment.orders A
+
+INNER JOIN  
+      efood2023-375916.main_assessment.COUNT_OF_Users_Per_City_With_At_least_10_USERS B
+      ON A.city = B.city
+
+where cuisine = 'Breakfast'
+
+group by city
+------------------------------------------------------------
+## Step 3
+## Count of orders per user per city
+create table efood2023-375916.main_assessment.Count_Of_Orders_Per_User_Per_City
+as
+SELECT 
+    
+      a.user_id,
+      a.city, 
+      count(order_id) Count_of_Orders_per_User
+
+FROM 
+      efood2023-375916.main_assessment.orders A
+
+INNER JOIN
+      efood2023-375916.main_assessment.COUNT_OF_Users_Per_City_With_At_least_10_USERS B
+      ON A.city = B.city
+
+WHERE cuisine = 'Breakfast'
+
+group by a.user_id,a.city
+------------------------------------------------------------
+## Step 4
+## identify top users (most orders) per city
+create table efood2023-375916.main_assessment.ROW_NUMBER_Per_City
+as
+SELECT 
+      
+      a.city,
+      a.Count_of_Orders_per_User,
+      user_id,
+      row_number() over(partition by a.city order by a.Count_of_Orders_per_User desc) as rn
+
+FROM
+     efood2023-375916.main_assessment.Count_Of_Orders_Per_User_Per_City a
+------------------------------------------------------------
+## Step 5
+## Keep top 10 users per city
+create table efood2023-375916.main_assessment.Top_10_Users_Per_City_Based_on_Count_of_Orders
+as
+SELECT * 
+
+FROM 
+      efood2023-375916.main_assessment.ROW_NUMBER_Per_City
+
+WHERE rn between 1 and 10
+
+ORDER BY 1,4 asc
+------------------------------------------------------------
+## Step 6
+## preFinal Table
+CREATE TABLE efood2023-375916.main_assessment.PreFinalTable
+as
+SELECT 
+
+     a.city,
+     a.Count_of_Orders_per_User,
+     a.user_id,
+     b.Count_of_Total_Orders,
+     round((a.Count_of_Orders_per_User/b.Count_of_Total_Orders)*100,2) as Contribution
+
+FROM 
+     efood2023-375916.main_assessment.Top_10_Users_Per_City_Based_on_Count_of_Orders A
+
+INNER JOIN
+     efood2023-375916.main_assessment.Total_Orders_Per_City B
+     ON A.city = B.city
+------------------------------------------------------------
+## Step 7
+## Contribution of top 10 users per city
+select 
+
+      city,
+      sum(Contribution)
+
+from 
+      efood2023-375916.main_assessment.PreFinalTable
+
+group by city
+
+order by 2 desc
+------------------------------------------------------------
+------------------------------------------------------------
+------------------------------------------------------------
+------------------------------------------------------------
+------------------------------------------------------------
+------------------------------------------------------------

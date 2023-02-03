@@ -1,0 +1,344 @@
+------------------------------------------------------------
+------------------------------------------------------------
+------------------------------------------------------------
+------------------------------------------------------------
+--------------------TOTAL EFOOD-----------------------------
+------------------------------------------------------------
+------------------------------------------------------------
+------------------------------------------------------------
+------------------------------------------------------------
+## Step 1
+## perimetros polewn > 1000 orders
+create table efood2023-375916.main_assessment.PERIMETROS(city string,Count_of_orders int,Count_of_users int)
+as
+SELECT  
+
+     city, 
+     count(order_id)           as Count_of_orders,
+     count(distinct(user_id))  as Count_of_users
+
+FROM 
+     efood2023-375916.main_assessment.orders
+
+where 1=1 
+
+group by city
+
+having count(order_id) > 1000
+------------------------------------------------------------
+## Step 2
+## Create Column Efood Frequency
+create table efood2023-375916.main_assessment.joinedDATA
+AS
+select 
+       city,
+       Count_of_orders,
+       Count_of_users,
+       (Count_of_orders/Count_of_users) as Efood_Frequency 
+
+from efood2023-375916.main_assessment.PERIMETROS 
+------------------------------------------------------------
+## Step 3
+## Users per city that have orders > 3
+create table efood2023-375916.main_assessment.UsersPerCityWithOver3orders
+as
+SELECT 
+
+      a.user_id,
+      a.city,
+      count(a.order_id) as Number_of_Orders
+
+FROM 
+     efood2023-375916.main_assessment.orders A
+     
+INNER JOIN
+     efood2023-375916.main_assessment.PERIMETROS B
+     ON A.city = B.city
+
+group by 
+     a.user_id,
+     a.city
+
+having count(a.order_id) > 3
+------------------------------------------------------------
+## Step 4
+## Count of users with over 3 orders per City
+create table efood2023-375916.main_assessment.count_of_users_per_city_with_over_3_orders
+as
+select 
+
+       city,
+       count(user_id) as Count_of_users_per_City_over_3_orders
+
+from 
+      efood2023-375916.main_assessment.UsersPerCityWithOver3orders 
+
+group by city
+------------------------------------------------------------
+## Step 5
+## Create Column EfoodUuers3FreqPercent
+create table efood2023-375916.main_assessment.EfoodUsersFreq3Percent
+as
+select
+
+      a.city,
+      a.Count_of_users_per_City_over_3_orders,
+      b.Count_of_orders,
+      b.Count_of_users,
+      (a.Count_of_users_per_City_over_3_orders/b.Count_of_users) as EfoodUuers3FreqPercent
+
+from 
+      efood2023-375916.main_assessment.count_of_users_per_city_with_over_3_orders a
+
+inner join
+      efood2023-375916.main_assessment.PERIMETROS b
+      on a.city = b.city
+------------------------------------------------------------
+## Step 6
+## Join all tables
+create table efood2023-375916.main_assessment.QQ1
+as
+select 
+
+      a.*,
+      b.Count_of_orders, 
+      b.Efood_Frequency , 
+      c.EfoodUuers3FreqPercent
+
+from 
+      efood2023-375916.main_assessment.orders a
+
+inner join 
+      efood2023-375916.main_assessment.joinedDATA b 
+      on a.city = b.city
+
+inner join 
+      efood2023-375916.main_assessment.EfoodUsersFreq3Percent c
+      on a.city = c.city
+------------------------------------------------------------
+## Step 7
+## EFOOD Total Data table
+Create table efood2023-375916.main_assessment.EFOOD_TOTAL
+AS
+select  
+ 
+      city,
+      sum((amount/Count_of_orders)) as Efood_Basket,
+      Efood_Frequency,
+      EfoodUuers3FreqPercent
+
+from 
+      efood2023-375916.main_assessment.QQ1
+
+group by 
+      city,Efood_Frequency,
+      EfoodUuers3FreqPercent
+------------------------------------------------------------
+------------------------------------------------------------
+------------------------------------------------------------
+------------------------------------------------------------
+--------------------BREAKFAST CUISINE-----------------------
+------------------------------------------------------------
+------------------------------------------------------------
+------------------------------------------------------------
+# Step 1
+## perimetros Polewn > 1000 orders gia cuisine = 'Breakfast'
+create table efood2023-375916.main_assessment.PERIMETROS2(city string,Count_of_Breakfast_orders int,Count_of_users int)
+as
+SELECT  
+
+     city,
+     count(order_id)           as Count_of_Breakfast_orders,
+     count(distinct(user_id))  as Count_of_users
+
+FROM 
+     efood2023-375916.main_assessment.orders
+
+where 1=1 
+      AND cuisine = 'Breakfast'
+
+group by city
+
+having count(order_id) > 1000
+------------------------------------------------------------
+## Step 2
+## Create Column Breakfast_Frequency
+create table efood2023-375916.main_assessment.joinedDATA2
+AS
+select 
+
+       city,
+       Count_of_Breakfast_orders,
+       Count_of_users,
+       (Count_of_Breakfast_orders/Count_of_users) as Breakfast_Frequency 
+
+from 
+      efood2023-375916.main_assessment.PERIMETROS2 
+------------------------------------------------------------
+## Step 3
+## Users per city that have orders > 3
+create table efood2023-375916.main_assessment.UsersPerCityWithOver3orders2
+as
+SELECT 
+
+      a.user_id,
+      a.city,
+      count(a.order_id) as Number_of_Orders
+
+FROM 
+     efood2023-375916.main_assessment.orders A
+
+INNER JOIN
+     efood2023-375916.main_assessment.PERIMETROS2 B
+     ON A.city = B.city
+
+where a.cuisine = 'Breakfast'
+
+group by 
+     a.user_id,
+     a.city
+
+having count(a.order_id) > 3
+------------------------------------------------------------
+## Step 4
+## Count of users with over 3 orders Per City
+create table efood2023-375916.main_assessment.count_of_users_per_city_with_over_3_orders2
+as
+select 
+
+       city,
+       count(user_id) as Count_of_users_per_City_over_3_orders
+
+from 
+       efood2023-375916.main_assessment.UsersPerCityWithOver3orders2 
+
+group by city 
+------------------------------------------------------------
+## Step 5
+## Create Column BREAKFASTUsers3FreqPercent
+create table efood2023-375916.main_assessment.BREAKFASTUsersFreq3Percent
+as
+select
+
+       a.city,
+       a.Count_of_users_per_City_over_3_orders,
+       b.Count_of_Breakfast_orders,
+       b.Count_of_users,
+       (a.Count_of_users_per_City_over_3_orders/b.Count_of_users) as BREAKFASTUsers3FreqPercent
+
+from 
+       efood2023-375916.main_assessment.count_of_users_per_city_with_over_3_orders2 a
+
+inner join
+       efood2023-375916.main_assessment.PERIMETROS2 b
+       on a.city = b.city
+------------------------------------------------------------
+## Step 6
+## Join Tables
+create table efood2023-375916.main_assessment.QQ2
+as
+select 
+
+       a.*, 
+       b.Count_of_Breakfast_orders, 
+       b.Breakfast_Frequency , 
+       c.BREAKFASTUsers3FreqPercent
+
+from 
+       efood2023-375916.main_assessment.orders a
+
+inner join 
+       efood2023-375916.main_assessment.joinedDATA2 b 
+       on a.city = b.city
+
+inner join 
+       efood2023-375916.main_assessment.BREAKFASTUsersFreq3Percent c
+       on a.city = c.city
+
+where cuisine = 'Breakfast'
+------------------------------------------------------------
+## Step 7
+## Breakfast Total Data Table
+Create table efood2023-375916.main_assessment.BREAKFAST_TOTAL
+AS
+select  
+ 
+      city,
+      sum((amount/Count_of_Breakfast_orders)) as BREAKFAST_Basket,
+      Breakfast_Frequency,
+      BREAKFASTUsers3FreqPercent
+
+
+from  
+      efood2023-375916.main_assessment.QQ2
+
+group by 
+      city,
+      Breakfast_Frequency,
+      BREAKFASTUsers3FreqPercent
+------------------------------------------------------------
+## Step 8
+## Join tables in order to get Count of Breakfast orders column
+create table efood2023-375916.main_assessment.BREAKFAST_TOTAL2
+as
+select 
+    
+     a.*,
+     b.Count_of_Breakfast_orders
+
+from 
+     efood2023-375916.main_assessment.BREAKFAST_TOTAL a
+
+inner join 
+     efood2023-375916.main_assessment.PERIMETROS2 b
+     on a.city = b.city
+------------------------------------------------------------
+## Step 9
+## Join Efood total data with Breakfast total data
+create table efood2023-375916.main_assessment.TOTAL_DATA
+as
+select  
+ 
+     a.city,
+     a.Count_of_Breakfast_orders,
+     a.BREAKFAST_Basket,
+     b.Efood_Basket,
+     a.Breakfast_Frequency,
+     b.Efood_Frequency,
+     a.BREAKFASTUsers3FreqPercent,
+     b.EfoodUuers3FreqPercent  
+
+from 
+     efood2023-375916.main_assessment.BREAKFAST_TOTAL2 a
+
+inner join
+     efood2023-375916.main_assessment.EFOOD_TOTAL b
+     on a.city = b.city
+
+order by a.Count_of_Breakfast_orders desc
+------------------------------------------------------------
+## Step 10
+## Create presented table with top 5 cities based on most Breakfast orders
+create table efood2023-375916.main_assessment.Presented_Data
+as
+select 
+
+      city,
+      BREAKFAST_Basket,
+      Efood_Basket,
+      Breakfast_Frequency,
+      Efood_Frequency,
+      BREAKFASTUsers3FreqPercent,
+      EfoodUuers3FreqPercent 
+
+from 
+      efood2023-375916.main_assessment.TOTAL_DATA
+
+limit 5
+------------------------------------------------------------
+-------------------FINAL TABLE------------------------------
+------------------------------------------------------------
+select * from efood2023-375916.main_assessment.Presented_Data
+------------------------------------------------------------
+------------------------------------------------------------
+------------------------------------------------------------
